@@ -7,7 +7,9 @@
 > section from the repository itself — so each agent knows your stack, your build
 > commands and the folders it must never touch. A `PostToolUse` hook then reads
 > that folder at runtime and reminds Claude to invoke the relevant agents after
-> every code change; a `Stop` hook catches the turns where it didn't.
+> every code change; a `Stop` hook catches the turns where it didn't. On an
+> existing project, a one-off `/amorcer-docs` pass builds the documentation files
+> from the whole repository — or audits the ones already there.
 > Hooks are POSIX `sh`, dependency-free (`jq` used when available), and work on
 > macOS, Linux and WSL. **The agent prompts, commands and documentation are
 > written in French.**
@@ -78,6 +80,24 @@ Une pile technique annoncée à l'oral n'est jamais écrite comme un fait : elle
 consignée `(déclarée par l'utilisateur, non vérifiée dans le code)` et les
 marqueurs restent, pour qu'une vérification ait lieu plus tard.
 
+### Amorçage de la documentation
+
+Les trois agents de documentation travaillent sur un **diff** : ils tiennent un
+fichier à jour, mais ne savent ni le construire depuis rien, ni redresser un
+fichier écrit avant eux. Un `PROJECT_MEMORY.md` créé à partir d'une modification
+isolée documenterait cette modification, pas le projet.
+
+`/amorcer-docs` fait l'autre moitié du travail, avec le dépôt entier pour
+périmètre : fichier absent → construit depuis le code ; fichier existant →
+audité ligne par ligne, ce qui est faux, invérifiable ou qu'un `grep` donnerait
+mieux étant retiré. C'est la commande à lancer sur un projet **déjà en cours**,
+qu'il ait ou non une documentation existante.
+
+La première session où un agent de documentation est installé, que le projet a du
+code et que la passe n'a jamais eu lieu, Claude la propose — une fois. La passe
+faite écrit `.claude/.state/docs-amorcage` ; un refus écrit
+`.claude/.state/docs-amorcage-skipped`, et la proposition ne revient plus.
+
 ### Après chaque modification de code
 
 Le hook `PostToolUse` lit à chaud le contenu de `.claude/agents/` — aucun nom
@@ -94,6 +114,7 @@ Le hook `Stop` sert de filet : si du code a été modifié sans revue, il bloque
 |---|---|
 | `/revue` | passe complète : `error-handling` → `qualite-code` → `securite` en séquence, puis les agents de documentation en parallèle |
 | `/agents-setup` | rejouer la sélection : ajouter ou retirer des agents, adapter leur contexte |
+| `/amorcer-docs` | passe unique : construire les fichiers de documentation absents, auditer ceux qui existent, à partir du dépôt entier |
 
 `/agents-setup` accepte des noms directement : `/agents-setup securite memoire-projet`.
 

@@ -58,6 +58,33 @@ avec assurance ; un `grep` ne ment jamais.
 Donc : si tu n'es pas certain d'un fait, **vérifie-le dans le code avant de
 l'écrire**. Si tu ne peux pas le vérifier, ne l'écris pas.
 
+## Mode amorçage — quand le périmètre est le dépôt entier
+
+Si l'agent principal te donne comme périmètre **le dépôt entier** et non un
+diff, tu n'es pas en mise à jour : tu amorces le fichier. C'est une passe longue,
+qui ne se fait qu'une fois.
+
+**Le fichier n'existe pas.** Construis-le depuis le code. Explore d'abord :
+arborescence de premier et deuxième niveau, points d'entrée, manifestes de
+paquets, fichiers de configuration, schémas et migrations, puis les fichiers les
+plus gros de chaque sous-système — ce sont eux qui portent les décisions. Écris
+ensuite les quatre sections. Vise court et exact : cinquante lignes justes valent
+mieux que deux cents lignes plausibles.
+
+**Le fichier existe.** Audite-le ligne par ligne contre le code, sans indulgence
+pour ce qui s'y trouve déjà. Pour chaque affirmation :
+- vraie, et non déductible d'un `grep` → garde ;
+- fausse ou périmée → corrige, ou supprime si le sujet n'existe plus ;
+- invérifiable dans le code → supprime ;
+- exacte mais qu'un `grep` de trois secondes donnerait en plus fiable → supprime ;
+- devenue une spécification (au-delà de 5 lignes) → ramène-la à *quoi, pourquoi,
+  le piège*.
+
+Puis restructure selon les priorités ci-dessus, et applique le contrôle final.
+
+Dans les deux cas : ne déduis jamais une décision d'architecture du seul nom d'un
+fichier. Une décision se lit dans le code, ou ne s'écrit pas.
+
 ## Ce que l'agent principal te fournit
 
 Un résumé des changements (fichiers touchés, ce qui a été ajouté / modifié /

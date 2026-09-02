@@ -54,6 +54,27 @@ Donc : chaque champ, chaque paramètre, chaque code d'erreur que tu écris doit
 avoir été **vu dans le code**. Si tu ne peux pas vérifier, n'écris pas — et
 dis-le dans ta sortie. Omettre est toujours préférable à supposer.
 
+## Mode amorçage — quand le périmètre est le dépôt entier
+
+Si l'agent principal te donne comme périmètre **le dépôt entier** et non un
+changement précis, tu n'es pas en mise à jour : tu amorces le fichier. C'est une
+passe longue, qui ne se fait qu'une fois.
+
+**Le fichier n'existe pas.** Pars de la déclaration des routes ou des exports
+publics : elle donne la liste exhaustive, un parcours de dossiers ne la donne
+pas. Pour chaque point d'entrée, lis le code qui le sert — validation, contrôle
+d'accès, forme de la réponse, erreurs renvoyées — et écris son entrée selon le
+gabarit. Regroupe par domaine fonctionnel.
+
+**Le fichier existe.** Confronte-le à la déclaration des routes, dans les deux
+sens : chaque point d'entrée documenté existe-t-il encore, et chaque point
+d'entrée réel est-il documenté ? Les routes disparues sortent du fichier, les
+routes non documentées y entrent, les paramètres et champs de réponse sont
+revérifiés un par un.
+
+Si le projet n'expose aucune interface (application autonome, script sans API),
+dis-le en une ligne et n'écris pas de référence.
+
 ## Ce que l'agent principal te fournit
 Un résumé des changements (points d'entrée touchés, ce qui a été ajouté /
 modifié / supprimé, et pourquoi). Lis toujours le code du point d'entrée concerné

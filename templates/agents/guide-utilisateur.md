@@ -42,6 +42,28 @@ Si le fichier n'existe pas encore, crée-le avec une structure simple : un titre
 une courte introduction disant à quoi sert l'application, puis une section par
 grand parcours utilisateur.
 
+## Mode amorçage — quand le périmètre est le dépôt entier
+
+Si l'agent principal te donne comme périmètre **le dépôt entier** et non un
+changement précis, tu n'es pas en mise à jour : tu amorces le fichier. C'est une
+passe longue, qui ne se fait qu'une fois.
+
+**Le fichier n'existe pas.** Construis-le en parcourant l'interface réelle :
+écrans ou pages, navigation, composants de formulaire, fichiers de libellés ou de
+traduction, messages affichés. Reconstitue les **parcours** — ce que
+l'utilisateur veut accomplir, dans l'ordre où il le fait — et non la liste des
+composants. Une section par parcours.
+
+**Le fichier existe.** Vérifie-le écran par écran contre l'interface actuelle.
+Chaque libellé cité doit exister tel quel dans le code ; chaque étape décrite doit
+être encore possible ; chaque élément disparu doit sortir du fichier. Une
+consigne qui décrit un bouton retiré fait perdre plus de temps qu'une section
+manquante.
+
+Si l'application n'a pas d'interface utilisateur (bibliothèque, service sans
+écran), dis-le en une ligne et n'écris pas de guide : un guide inventé est pire
+que pas de guide.
+
 ## Ce que l'agent principal te fournit
 Un résumé des changements d'interface (éléments ajoutés / modifiés / supprimés,
 libellés visibles, nouveau flux ou comportement, et pourquoi). Si le contexte est

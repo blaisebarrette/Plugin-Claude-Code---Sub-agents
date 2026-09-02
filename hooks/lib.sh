@@ -187,3 +187,24 @@ agents_awaiting_context() {
     printf '%s\n' "${_b%.md}"
   done
 }
+
+# doc_status <racine> : pour chaque agent de documentation installe, une ligne
+# « agent fichier etat » (etat = absent | present). Rien si aucun n'est installe.
+#
+# La correspondance agent -> fichier est volontairement explicite ici : c'est le
+# seul endroit a changer si un modele d'agent adopte un autre nom de fichier.
+doc_status() {
+  _root="$1"
+  for _pair in "memoire-projet PROJECT_MEMORY.md" \
+               "guide-utilisateur USER_GUIDE.md" \
+               "reference-api API_REFERENCE.md"; do
+    _agent="${_pair%% *}"
+    _file="${_pair##* }"
+    [ -f "$_root/.claude/agents/$_agent.md" ] || continue
+    if [ -f "$_root/$_file" ]; then
+      printf '%s %s present\n' "$_agent" "$_file"
+    else
+      printf '%s %s absent\n' "$_agent" "$_file"
+    fi
+  done
+}
