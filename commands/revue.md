@@ -19,6 +19,13 @@ Périmètre demandé par l'utilisateur (prioritaire s'il est renseigné) : $ARGU
 Fais tourner la passe de revue sur ce périmètre, avec **les sous-agents listés
 ci-dessus et eux seuls** — n'en invoque jamais un qui n'est pas installé.
 
+**Si un sous-agent listé ci-dessus est refusé par l'outil Agent** (« Agent type
+'x' not found »), c'est qu'il a été copié dans `.claude/agents/` après le
+démarrage de cette session : la liste est lue au lancement. Dis-le à
+l'utilisateur et demande-lui de redémarrer sa session. Ne te rabats **jamais**
+sur `general-purpose` en lui donnant la description de l'agent : tu perdrais tout
+le prompt système qui fait la valeur de l'agent, en croyant l'avoir remplacé.
+
 Les étapes ci-dessous nomment les agents tels que le plugin les livre. Un projet
 équipé avant le plugin peut les avoir sous d'autres noms (`code-quality`,
 `security`, `project-memory`, `user-guide`…) : raisonne alors par **rôle**, en te

@@ -61,12 +61,20 @@ Une fois la reponse obtenue :
 $ADAPTATION
 3. Ajoute la ligne \`.claude/.state/\` au \`.gitignore\` du projet si elle n'y est pas deja (ce dossier ne contient que de l'etat de session). Cree le fichier s'il n'existe pas ; si le projet n'est pas un depot git, passe cette etape.
 4. Si l'utilisateur n'en veut aucun : cree le fichier vide \`$STATE_DIR/agents-setup-skipped\` pour que la question ne revienne plus, et signale-lui qu'il peut lancer \`/sous-agents:agents-setup\` plus tard.
-5. Dis en une ligne ce qui a ete installe, puis enchaine normalement sur la demande de l'utilisateur.
+5. Dis en une ligne ce qui a ete installe, **puis previens l'utilisateur que ces sous-agents ne seront invocables qu'au prochain demarrage de session** : la liste des agents est lue au lancement, un agent copie en cours de session est introuvable jusque-la. N'essaie pas de les invoquer avant, et ne te rabats surtout pas sur un agent generique en leur place — leurs instructions detaillees seraient perdues. Enchaine ensuite normalement sur la demande de l'utilisateur.
 
 Ne copie aucun agent que l'utilisateur n'a pas choisi, et ne modifie aucun fichier du plugin lui-meme.
 EOF
   exit 0
 fi
+
+# Le projet est equipe : on pose le repere de detection des modifications, pour
+# que le hook Stop rattrape aussi les editions faites autrement que par
+# Edit/Write (mode automatique : ecriture par Bash).
+SID="$(json_str session_id)"
+[ -n "$SID" ] || SID="inconnue"
+_st="$(state_dir "$ROOT")"
+[ -n "$_st" ] && : > "$_st/$SID.epoch" 2>/dev/null
 
 # ---------------------------------------------------------------------------
 # Cas 2 : des agents installes attendent encore leur contexte.

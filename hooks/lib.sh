@@ -143,7 +143,8 @@ is_reviewable() {
     *.lock|*-lock.json|*.tsbuildinfo|*.min.js|*.map) return 1 ;;
   esac
   case "$1" in
-    *.php|*.ts|*.tsx|*.js|*.jsx|*.mjs|*.cjs|*.vue|*.svelte) return 0 ;;
+    *.php|*.ts|*.tsx|*.js|*.jsx|*.mjs|*.cjs|*.vue|*.svelte|*.astro) return 0 ;;
+    *.html|*.htm|*.twig|*.blade.php|*.erb) return 0 ;;
     *.py|*.rb|*.go|*.rs|*.java|*.kt|*.swift|*.cs|*.c|*.h|*.cpp|*.hpp|*.m|*.mm) return 0 ;;
     *.sql|*.sh|*.bash|*.zsh|*.css|*.scss|*.json|*.yml|*.yaml|*.toml) return 0 ;;
     *) return 1 ;;
@@ -221,4 +222,25 @@ doc_status() {
       printf '%s %s absent\n' "$_agent" "$_file"
     fi
   done
+}
+
+# changed_since <racine> <fichier_repere> : fichiers de code modifies depuis le
+# repere, un par ligne.
+#
+# Raison d'etre : le hook PostToolUse ne voit que Edit/Write/MultiEdit. En mode
+# automatique, Claude ecrit les fichiers par Bash (heredoc, sed, script) — la
+# file d'attente reste alors vide et le filet de securite ne se declenche jamais.
+# Comparer les dates de modification a un repere pose en debut de tour rattrape
+# toutes les voies d'ecriture, quel que soit l'outil employe.
+changed_since() {
+  _root="$1"
+  _ref="$2"
+  [ -f "$_ref" ] || return 0
+  find "$_root" \
+    \( -name .git -o -name .claude -o -name node_modules -o -name vendor \
+       -o -name dist -o -name build -o -name target -o -name .venv -o -name venv \
+       -o -name __pycache__ \) -prune -o \
+    -type f -newer "$_ref" -print 2>/dev/null | while IFS= read -r _f; do
+      is_reviewable "$_f" && printf '%s\n' "$_f"
+    done
 }

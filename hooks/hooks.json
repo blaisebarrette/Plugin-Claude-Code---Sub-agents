@@ -19,8 +19,7 @@
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/post-tool-use.sh\"",
-            "timeout": 10,
-            "suppressOutput": true
+            "timeout": 10
           }
         ]
       }

@@ -19,11 +19,26 @@ SID="$(json_str session_id)"
 STATE="$ROOT/.claude/.state"
 PENDING="$STATE/$SID.pending"
 REVIEW="$STATE/$SID.review"
+EPOCH="$STATE/$SID.epoch"
 
 # Deuxieme passage : la revue a eu lieu ou a ete refusee. On purge et on sort.
 if json_true stop_hook_active; then
   rm -f "$PENDING" "$REVIEW" 2>/dev/null || true
+  : > "$EPOCH" 2>/dev/null || true
   exit 0
+fi
+
+# File d'attente vide : cela ne veut pas dire que rien n'a change. En mode
+# automatique, Claude ecrit par Bash et PostToolUse ne voit rien passer. On
+# compare alors les dates de modification au repere pose au tour precedent.
+if [ ! -s "$PENDING" ]; then
+  if [ -f "$EPOCH" ]; then
+    changed_since "$ROOT" "$EPOCH" >> "$PENDING" 2>/dev/null || true
+  else
+    # Premier tour : on pose le repere, rien a exiger encore.
+    mkdir -p "$STATE" 2>/dev/null && : > "$EPOCH" 2>/dev/null
+    exit 0
+  fi
 fi
 
 [ -s "$PENDING" ] || exit 0
@@ -38,6 +53,7 @@ fi
 # La file passe en .review : /revue sait alors quoi relire, meme apres purge.
 sort -u "$PENDING" > "$REVIEW" 2>/dev/null || exit 0
 rm -f "$PENDING" 2>/dev/null || true
+: > "$EPOCH" 2>/dev/null || true
 
 FICHIERS="$(sed 's|^|  - |' "$REVIEW")"
 NB="$(wc -l < "$REVIEW" | tr -d ' ')"
