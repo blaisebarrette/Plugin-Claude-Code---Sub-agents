@@ -33,6 +33,14 @@ une option par modèle disponible, en reprenant sa description comme explication
 et coche par défaut ce qui est déjà installé. Précise dans la question que les
 agents non retenus seront retirés du projet.
 
+**Garde-fou contre les doublons de rôle.** Un projet équipé avant le plugin a
+souvent déjà un agent qui couvre le rôle d'un modèle, sous un autre nom
+(`code-quality` pour `qualite-code`, `security` pour `securite`,
+`project-memory` pour `memoire-projet`, `user-guide` pour `guide-utilisateur`).
+Compare les rôles, pas les noms : ne propose jamais d'installer un modèle dont le
+rôle est déjà tenu. Signale-le à l'utilisateur en une ligne — s'il veut vraiment
+remplacer son agent par le modèle, il te le dira.
+
 ### 2. Installer
 
 1. `mkdir -p "$CLAUDE_PROJECT_DIR/.claude/agents"`.
