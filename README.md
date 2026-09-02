@@ -191,6 +191,49 @@ d'effet. En les gardant dans `templates/`, seuls les agents copiés dans
   `API_REFERENCE.md` à la racine du projet. Pour changer ces noms, modifiez-les
   dans le modèle d'agent correspondant.
 
+## Publier une nouvelle version
+
+`claude plugin install` **n'upgrade pas** : sur un plugin déjà installé, il
+répond « already installed » et ne touche à rien. La version installée reste
+épinglée, cache compris.
+
+Donc, pour toute correction — même d'une ligne dans un hook :
+
+1. **Bumper `version`** dans `.claude-plugin/plugin.json`. Sans ça, rien ne se
+   propage.
+2. Commiter et pousser.
+3. Optionnel, pour une publication propre : `claude plugin tag`, qui crée le tag
+   git `sous-agents--v<version>` en vérifiant que le manifeste et l'entrée de la
+   place de marché s'accordent.
+
+Côté poste qui consomme le plugin :
+
+```bash
+claude plugin marketplace update blaise-plugins
+```
+
+```bash
+claude plugin update sous-agents@blaise-plugins
+```
+
+Puis **redémarrer la session** — la mise à jour ne s'applique qu'au prochain
+démarrage — et vérifier avec `claude plugin list` que la version affichée a bougé
+et que le statut est `✔ enabled`.
+
+### Pièges connus
+
+- **`claude plugin validate --strict` ne voit pas tout.** Il a laissé passer un
+  manifeste qui empêchait le plugin de se charger entièrement (`"hooks":
+  "./hooks/hooks.json"` alors que ce fichier est déjà auto-découvert :
+  « Duplicate hooks file detected »). Le seul verdict fiable est
+  `claude plugin list` après installation : `Status: ✔ enabled`.
+- **Ne pas déclarer dans le manifeste ce qui est auto-découvert** :
+  `hooks/hooks.json`, `commands/`, `agents/`, `skills/` aux emplacements
+  standards se chargent seuls. Le champ correspondant ne sert qu'à pointer des
+  fichiers *supplémentaires*.
+- **Les commandes d'un plugin sont préfixées** (`/sous-agents:revue`) : pas de
+  collision possible avec une commande du projet portant le même nom.
+
 ## Adapter un agent après coup
 
 Les agents installés sont de simples fichiers dans `.claude/agents/` du projet :
