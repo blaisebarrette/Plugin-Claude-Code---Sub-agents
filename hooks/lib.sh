@@ -160,3 +160,30 @@ state_dir() {
   find "$_s" -type f -mtime +2 -delete 2>/dev/null || true
   printf '%s' "$_s"
 }
+
+# has_code <racine> : 0 si le projet contient de quoi observer une pile technique.
+# Seuil a 3 fichiers de code hors dependances : un depot qui n'a qu'un README et
+# un fichier de config ne permet pas encore d'adapter un agent honnetement.
+has_code() {
+  _n="$(find "$1" \
+    \( -name .git -o -name .claude -o -name node_modules -o -name vendor \
+       -o -name dist -o -name build -o -name target -o -name .venv -o -name venv \) -prune -o \
+    -type f \( -name '*.php' -o -name '*.ts' -o -name '*.tsx' -o -name '*.js' -o -name '*.jsx' \
+       -o -name '*.mjs' -o -name '*.vue' -o -name '*.svelte' -o -name '*.py' -o -name '*.rb' \
+       -o -name '*.go' -o -name '*.rs' -o -name '*.java' -o -name '*.kt' -o -name '*.swift' \
+       -o -name '*.cs' -o -name '*.c' -o -name '*.h' -o -name '*.cpp' -o -name '*.m' \) \
+    -print 2>/dev/null | head -n 3 | wc -l | tr -d ' ')"
+  [ "${_n:-0}" -ge 3 ]
+}
+
+# agents_awaiting_context <racine> : noms des agents installes dont le bloc
+# « Contexte du projet » n'a jamais ete rempli (marqueurs encore presents), un par
+# ligne. C'est le cas d'un projet installe alors qu'il etait encore vide.
+agents_awaiting_context() {
+  _dir="$1/.claude/agents"
+  [ -d "$_dir" ] || return 0
+  grep -l 'CONTEXTE-PROJET' "$_dir"/*.md 2>/dev/null | while IFS= read -r _f; do
+    _b="${_f##*/}"
+    printf '%s\n' "${_b%.md}"
+  done
+}

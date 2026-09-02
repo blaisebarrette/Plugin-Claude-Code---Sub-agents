@@ -60,6 +60,24 @@ La question n'est posée **qu'une fois** : dès que `.claude/agents/` contient u
 agent, le hook ne fait plus rien. Si vous n'en voulez aucun, le fichier
 `.claude/.state/agents-setup-skipped` est créé et la question ne revient pas.
 
+La ligne `.claude/.state/` est ajoutée au `.gitignore` du projet au passage.
+
+### Projet encore vide à l'installation
+
+Un dépôt neuf n'offre rien à observer : dans ce cas les agents sont copiés **sans
+être adaptés**, et leur bloc « Contexte du projet » reste en place avec ses
+marqueurs. Ils fonctionnent quand même — le bloc leur dit alors de lire les
+fichiers concernés avant d'agir plutôt que de supposer des conventions.
+
+Dès que le projet contient du code (seuil : trois fichiers source hors
+dépendances), la session suivante propose de finaliser l'adaptation. Un refus
+crée `.claude/.state/agents-context-skipped` et la proposition ne revient plus ;
+`/agents-setup` reste disponible à tout moment.
+
+Une pile technique annoncée à l'oral n'est jamais écrite comme un fait : elle est
+consignée `(déclarée par l'utilisateur, non vérifiée dans le code)` et les
+marqueurs restent, pour qu'une vérification ait lieu plus tard.
+
 ### Après chaque modification de code
 
 Le hook `PostToolUse` lit à chaud le contenu de `.claude/agents/` — aucun nom
@@ -116,12 +134,9 @@ d'effet. En les gardant dans `templates/`, seuls les agents copiés dans
   (`prompt_id`) ; le hook `Stop` se désarme via `stop_hook_active` ; les
   éditions dans `.claude/`, les dépendances, les artefacts générés et les trois
   fichiers de documentation produits par les agents ne déclenchent rien.
-- **État** : `.claude/.state/` du projet (file d'attente, verrous). Purge
-  automatique au-delà de 2 jours. À ajouter au `.gitignore` du projet :
-
-  ```
-  .claude/.state/
-  ```
+- **État** : `.claude/.state/` du projet (file d'attente, verrous, marqueurs de
+  refus). Purge automatique au-delà de 2 jours ; la ligne `.claude/.state/` est
+  ajoutée au `.gitignore` du projet lors de l'installation des agents.
 
 - **Fichiers produits** : `PROJECT_MEMORY.md`, `USER_GUIDE.md` et
   `API_REFERENCE.md` à la racine du projet. Pour changer ces noms, modifiez-les

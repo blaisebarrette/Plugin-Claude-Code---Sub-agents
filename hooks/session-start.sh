@@ -1,13 +1,14 @@
 #!/usr/bin/env sh
-# SessionStart — au premier lancement dans un projet sans sous-agents, demande a
-# Claude de poser la question de la selection puis d'installer les agents choisis.
+# SessionStart — deux roles, dans cet ordre :
 #
-# Ne fait strictement rien si .claude/agents/ contient deja au moins un agent, ou
-# si l'utilisateur a decline la selection une fois (marqueur .state). La question
-# n'est donc jamais reposee de session en session.
+#   1. Projet sans sous-agents : demander a Claude de poser la question de la
+#      selection, puis d'installer les agents choisis.
+#   2. Projet deja equipe mais dont des agents attendent encore leur contexte
+#      (installes alors que le depot etait vide) : demander de finaliser
+#      l'adaptation maintenant que le projet a du code a observer.
 #
-# Le stdout d'un hook SessionStart est ajoute tel quel au contexte de Claude :
-# pas besoin d'envelopper ce texte dans du JSON.
+# Silencieux dans tous les autres cas. Le stdout d'un hook SessionStart est
+# ajoute tel quel au contexte de Claude : pas besoin de JSON.
 set -u
 
 DIR="$( CDPATH= cd -- "$(dirname -- "$0")" 2>/dev/null && pwd )" || exit 0
@@ -18,16 +19,42 @@ read_payload
 ROOT="$(project_root)"
 PLUGIN="$(plugin_root)"
 TPL="$PLUGIN/templates/agents"
+STATE_DIR="$ROOT/.claude/.state"
 
 [ -d "$TPL" ] || exit 0
 
-# Deja configure : on sort sans bruit.
+# ---------------------------------------------------------------------------
+# Cas 2 : agents deja installes.
+# ---------------------------------------------------------------------------
 if [ -n "$(project_agents "$ROOT")" ]; then
+  ATTENTE="$(agents_awaiting_context "$ROOT")"
+  [ -n "$ATTENTE" ] || exit 0                                  # tout est adapte
+  [ -f "$STATE_DIR/agents-context-skipped" ] && exit 0          # refus memorise
+  has_code "$ROOT" || exit 0                                    # rien a observer
+
+  LISTE="$(printf '%s' "$ATTENTE" | sed 's/^/  - /')"
+  cat <<EOF
+[plugin sous-agents] Des sous-agents de ce projet n'ont jamais recu leur contexte : ils ont ete installes alors que le depot etait encore vide, et leur bloc \`<!-- CONTEXTE-PROJET:DEBUT -->\` est toujours en place. Le projet contient maintenant du code : c'est le moment de les finaliser.
+
+Agents concernes :
+$LISTE
+
+Au debut de ta prochaine reponse, avant de traiter la demande de l'utilisateur :
+
+1. Dis-lui en une phrase que ces agents peuvent maintenant etre adaptes au projet, et demande-lui si tu le fais tout de suite.
+2. S'il accepte : pour chacun, remplace le bloc delimite par \`<!-- CONTEXTE-PROJET:DEBUT -->\` et \`<!-- CONTEXTE-PROJET:FIN -->\` par le contexte reel du projet, constate dans le depot (jamais suppose) — chaque agent precise dans son bloc ce dont il a besoin. Retire ensuite les deux marqueurs. Ne modifie rien d'autre dans ces fichiers.
+3. S'il refuse : cree le fichier vide \`$STATE_DIR/agents-context-skipped\` pour ne plus le relancer, et dis-lui que \`/agents-setup\` le fera quand il voudra.
+4. Enchaine ensuite normalement sur sa demande.
+EOF
   exit 0
 fi
 
+# ---------------------------------------------------------------------------
+# Cas 1 : aucun sous-agent installe.
+# ---------------------------------------------------------------------------
+
 # Selection deja declinee : on ne redemande plus (l'utilisateur a /agents-setup).
-[ -f "$ROOT/.claude/.state/agents-setup-skipped" ] && exit 0
+[ -f "$STATE_DIR/agents-setup-skipped" ] && exit 0
 
 # Catalogue lisible, construit depuis les modeles reellement presents.
 CATALOGUE=""
@@ -39,6 +66,13 @@ for f in "$TPL"/*.md; do
 done
 [ -n "$CATALOGUE" ] || exit 0
 
+# L'instruction d'adaptation depend de ce qu'il y a a observer dans le depot.
+if has_code "$ROOT"; then
+  ADAPTATION="2. Pour chaque fichier copie, remplace le bloc delimite par \`<!-- CONTEXTE-PROJET:DEBUT -->\` et \`<!-- CONTEXTE-PROJET:FIN -->\` par le contexte reel de CE projet, apres l'avoir constate dans le depot (jamais suppose) : langages et frameworks, gestionnaire de paquets, commandes de build/lint/test, dossiers generes et dependances a ne jamais toucher, conventions de gestion d'erreurs, emplacement des routes API et de l'interface. Retire ensuite les deux marqueurs. Si un point ne peut pas etre verifie, ecris moins plutot que d'inventer."
+else
+  ADAPTATION="2. Ce projet ne contient pas encore de code a observer : **laisse le bloc \`<!-- CONTEXTE-PROJET:DEBUT -->\` et ses marqueurs en place**, tels quels. Ne remplis rien et n'invente aucune pile technique — les agents savent travailler sans ce bloc, ils lisent alors les fichiers avant d'agir. Si l'utilisateur mentionne de lui-meme la pile prevue, ajoute-la dans le bloc en la marquant clairement \`(declaree par l'utilisateur, non verifiee dans le code)\`, sans retirer les marqueurs. Des que le projet aura du code, une prochaine session proposera de finaliser l'adaptation."
+fi
+
 cat <<EOF
 [plugin sous-agents] Ce projet n'a pas encore de sous-agents : \`$ROOT/.claude/agents/\` est absent ou vide.
 
@@ -48,9 +82,10 @@ $CATALOGUE
 Une fois la reponse obtenue :
 
 1. \`mkdir -p "$ROOT/.claude/agents"\` puis copie **uniquement** les agents choisis depuis \`$TPL/\` vers \`$ROOT/.claude/agents/\`.
-2. Pour chaque fichier copie, remplace le bloc delimite par \`<!-- CONTEXTE-PROJET:DEBUT -->\` et \`<!-- CONTEXTE-PROJET:FIN -->\` par le contexte reel de CE projet, apres l'avoir constate dans le depot (jamais suppose) : langages et frameworks, gestionnaire de paquets, commandes de build/lint/test, dossiers generes et dependances a ne jamais toucher, conventions de gestion d'erreurs, emplacement des routes API et de l'interface. Retire les deux marqueurs. Si tu ne peux pas verifier un point, ecris moins plutot que d'inventer.
-3. Si l'utilisateur n'en veut aucun : cree le fichier vide \`$ROOT/.claude/.state/agents-setup-skipped\` pour que la question ne revienne plus, et signale-lui qu'il peut lancer \`/agents-setup\` plus tard.
-4. Dis en une ligne ce qui a ete installe, puis enchaine normalement sur la demande de l'utilisateur.
+$ADAPTATION
+3. Ajoute la ligne \`.claude/.state/\` au \`.gitignore\` du projet si elle n'y est pas deja (ce dossier ne contient que de l'etat de session). Cree le fichier s'il n'existe pas ; si le projet n'est pas un depot git, passe cette etape.
+4. Si l'utilisateur n'en veut aucun : cree le fichier vide \`$STATE_DIR/agents-setup-skipped\` pour que la question ne revienne plus, et signale-lui qu'il peut lancer \`/agents-setup\` plus tard.
+5. Dis en une ligne ce qui a ete installe, puis enchaine normalement sur la demande de l'utilisateur.
 
 Ne copie aucun agent que l'utilisateur n'a pas choisi, et ne modifie aucun fichier du plugin lui-meme.
 EOF

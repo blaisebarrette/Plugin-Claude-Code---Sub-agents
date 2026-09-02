@@ -1,6 +1,6 @@
 ---
 description: Choisir, ajouter ou retirer les sous-agents de ce projet
-allowed-tools: AskUserQuestion, Read, Write, Edit, Glob, Grep, Bash(ls:*), Bash(cat:*), Bash(mkdir:*), Bash(cp:*), Bash(rm:*), Bash(find:*)
+allowed-tools: AskUserQuestion, Read, Write, Edit, Glob, Grep, Bash(ls:*), Bash(cat:*), Bash(grep:*), Bash(mkdir:*), Bash(cp:*), Bash(rm:*), Bash(find:*)
 argument-hint: "[noms des agents voulus, séparés par des espaces — sinon la question est posée]"
 ---
 
@@ -11,6 +11,10 @@ argument-hint: "[noms des agents voulus, séparés par des espaces — sinon la 
 ## Sous-agents actuellement installés dans ce projet
 
 !`ls "$CLAUDE_PROJECT_DIR/.claude/agents" 2>/dev/null | sed 's/\.md$//' || echo "(aucun)"`
+
+## Agents installés dont le contexte n'a jamais été rempli
+
+!`grep -l 'CONTEXTE-PROJET' "$CLAUDE_PROJECT_DIR/.claude/agents"/*.md 2>/dev/null | sed 's|.*/||; s|\.md$||' || echo "(aucun)"`
 
 Sélection demandée par l'utilisateur (prioritaire si renseignée) : $ARGUMENTS
 
@@ -42,11 +46,23 @@ agents non retenus seront retirés du projet.
    « Contexte du projet » a probablement été adaptée. Si l'utilisateur veut le
    remettre à neuf, demande-le-lui d'abord.
 
-### 3. Adapter chaque agent nouvellement copié
+### 3. Adapter les agents qui attendent leur contexte
 
-Pour chaque fichier copié, remplace le bloc délimité par
-`<!-- CONTEXTE-PROJET:DEBUT -->` et `<!-- CONTEXTE-PROJET:FIN -->` par le
-contexte réel de ce projet, puis retire les deux marqueurs.
+Cela concerne **deux** groupes : les agents que tu viens de copier, et ceux
+listés plus haut comme n'ayant jamais reçu leur contexte — installés à un moment
+où le dépôt était encore vide.
+
+Pour chacun, remplace le bloc délimité par `<!-- CONTEXTE-PROJET:DEBUT -->` et
+`<!-- CONTEXTE-PROJET:FIN -->` par le contexte réel de ce projet, puis retire les
+deux marqueurs.
+
+**Sauf si le projet n'a encore rien à observer** (pas de code, pas de manifeste
+de paquets) : dans ce cas, laisse le bloc et ses marqueurs **intacts**. Un
+contexte inventé est pire que pas de contexte, et les marqueurs sont ce qui
+permettra à une prochaine session de finaliser l'adaptation. Si l'utilisateur
+mentionne la pile prévue, consigne-la dans le bloc en la marquant
+`(déclarée par l'utilisateur, non vérifiée dans le code)`, sans retirer les
+marqueurs.
 
 Constate ce contexte dans le dépôt, ne le suppose pas : manifestes de paquets,
 fichiers de configuration, arborescence, quelques fichiers représentatifs
@@ -63,9 +79,18 @@ Règles :
   contexte inventé fait des dégâts.
 - Ne modifie rien d'autre dans le fichier : le reste du prompt est volontaire.
 
-### 4. Rapport
+### 4. Hygiène du dépôt
 
-Une ligne par agent : installé / conservé / retiré / ignoré (avec la raison).
+Ajoute la ligne `.claude/.state/` au `.gitignore` du projet si elle n'y est pas
+déjà — ce dossier ne contient que de l'état de session, purgé au bout de deux
+jours. Crée le fichier s'il n'existe pas. Si le projet n'est pas un dépôt git,
+passe cette étape sans rien dire.
+
+### 5. Rapport
+
+Une ligne par agent : installé / conservé / adapté / retiré / ignoré (avec la
+raison). Signale explicitement les agents laissés en attente de contexte, et
+pourquoi.
 Termine en rappelant que la revue se lance avec `/revue`, et que le rappel
 automatique après modification de code est déjà actif.
 
