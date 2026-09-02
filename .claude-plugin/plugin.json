@@ -1,0 +1,11 @@
+{
+  "name": "sous-agents",
+  "displayName": "Sous-agents de projet",
+  "description": "Six sous-agents prets a l'emploi (qualite, erreurs, securite, guide utilisateur, reference API, memoire projet) : selection a la carte au premier lancement dans un projet, puis rappel automatique apres chaque modification de code.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Blaise Barrette"
+  },
+  "keywords": ["sous-agents", "revue de code", "securite", "documentation", "hooks"],
+  "hooks": "./hooks/hooks.json"
+}

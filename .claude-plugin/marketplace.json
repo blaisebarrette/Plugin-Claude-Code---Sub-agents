@@ -1,0 +1,13 @@
+{
+  "name": "blaise-plugins",
+  "owner": {
+    "name": "Blaise Barrette"
+  },
+  "plugins": [
+    {
+      "name": "sous-agents",
+      "source": "./",
+      "description": "Six sous-agents de projet, selectionnables par projet et declenches automatiquement apres chaque modification de code."
+    }
+  ]
+}
