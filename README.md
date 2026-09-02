@@ -1,5 +1,22 @@
 # Sous-agents de projet — plugin Claude Code
 
+> **English summary** — A Claude Code plugin bundling six ready-to-use subagents:
+> code quality, error handling, security, user guide, API reference and project
+> memory. On the first session in a project, Claude asks which ones you want,
+> copies them into `.claude/agents/`, and fills in their "project context"
+> section from the repository itself — so each agent knows your stack, your build
+> commands and the folders it must never touch. A `PostToolUse` hook then reads
+> that folder at runtime and reminds Claude to invoke the relevant agents after
+> every code change; a `Stop` hook catches the turns where it didn't.
+> Hooks are POSIX `sh`, dependency-free (`jq` used when available), and work on
+> macOS, Linux and WSL. **The agent prompts, commands and documentation are
+> written in French.**
+>
+> ```
+> /plugin marketplace add blaisebarrette/Plugin-Claude-Code---Sub-agents
+> /plugin install sous-agents@blaise-plugins
+> ```
+
 Six sous-agents prêts à l'emploi, **choisis projet par projet** au premier
 lancement, puis rappelés automatiquement après chaque modification de code.
 
