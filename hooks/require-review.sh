@@ -51,7 +51,7 @@ $FICHIERS
 Sous-agents installes dans ce projet :
 $LISTE
 
-Lance maintenant \`/revue\` : la commande lit la liste dans \`.claude/.state/$SID.review\` et enchaine les sous-agents dans le bon ordre.
+Lance maintenant la passe de revue : \`/revue\` si le projet a sa propre commande, sinon \`/sous-agents:revue\`. Elle lit la liste dans \`.claude/.state/$SID.review\` et enchaine les sous-agents dans le bon ordre.
 
 Si ces changements sont purement cosmetiques (reformatage, renommage local, typo, commentaires), ou si l'utilisateur t'a explicitement demande de sauter la revue, dis-le en une phrase et termine sans lancer /revue.
 EOF

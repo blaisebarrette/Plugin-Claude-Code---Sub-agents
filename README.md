@@ -8,7 +8,7 @@
 > commands and the folders it must never touch. A `PostToolUse` hook then reads
 > that folder at runtime and reminds Claude to invoke the relevant agents after
 > every code change; a `Stop` hook catches the turns where it didn't. On an
-> existing project, a one-off `/amorcer-docs` pass builds the documentation files
+> existing project, a one-off `/sous-agents:amorcer-docs` pass builds the documentation files
 > from the whole repository — or audits the ones already there.
 > Hooks are POSIX `sh`, dependency-free (`jq` used when available), and work on
 > macOS, Linux and WSL. **The agent prompts, commands and documentation are
@@ -74,7 +74,7 @@ fichiers concernés avant d'agir plutôt que de supposer des conventions.
 Dès que le projet contient du code (seuil : trois fichiers source hors
 dépendances), la session suivante propose de finaliser l'adaptation. Un refus
 crée `.claude/.state/agents-context-skipped` et la proposition ne revient plus ;
-`/agents-setup` reste disponible à tout moment.
+`/sous-agents:agents-setup` reste disponible à tout moment.
 
 Une pile technique annoncée à l'oral n'est jamais écrite comme un fait : elle est
 consignée `(déclarée par l'utilisateur, non vérifiée dans le code)` et les
@@ -87,7 +87,7 @@ fichier à jour, mais ne savent ni le construire depuis rien, ni redresser un
 fichier écrit avant eux. Un `PROJECT_MEMORY.md` créé à partir d'une modification
 isolée documenterait cette modification, pas le projet.
 
-`/amorcer-docs` fait l'autre moitié du travail, avec le dépôt entier pour
+`/sous-agents:amorcer-docs` fait l'autre moitié du travail, avec le dépôt entier pour
 périmètre : fichier absent → construit depuis le code ; fichier existant →
 audité ligne par ligne, ce qui est faux, invérifiable ou qu'un `grep` donnerait
 mieux étant retiré. C'est la commande à lancer sur un projet **déjà en cours**,
@@ -106,17 +106,20 @@ correspond, dans le bon ordre. Un seul rappel par tour, quelle que soit le nombr
 d'éditions.
 
 Le hook `Stop` sert de filet : si du code a été modifié sans revue, il bloque
-**une seule fois** la fin du tour et demande `/revue`.
+**une seule fois** la fin du tour et demande la passe de revue.
 
 ### Commandes
 
 | Commande | Effet |
 |---|---|
-| `/revue` | passe complète : `error-handling` → `qualite-code` → `securite` en séquence, puis les agents de documentation en parallèle |
-| `/agents-setup` | rejouer la sélection : ajouter ou retirer des agents, adapter leur contexte |
-| `/amorcer-docs` | passe unique : construire les fichiers de documentation absents, auditer ceux qui existent, à partir du dépôt entier |
+| `/sous-agents:revue` | passe complète : `error-handling` → `qualite-code` → `securite` en séquence, puis les agents de documentation en parallèle |
+| `/sous-agents:agents-setup` | rejouer la sélection : ajouter ou retirer des agents, adapter leur contexte |
+| `/sous-agents:amorcer-docs` | passe unique : construire les fichiers de documentation absents, auditer ceux qui existent, à partir du dépôt entier |
 
-`/agents-setup` accepte des noms directement : `/agents-setup securite memoire-projet`.
+Les commandes d'un plugin sont préfixées par son nom : elles n'entrent jamais en
+collision avec une commande du projet portant le même nom.
+
+Les noms peuvent être passés directement : `/sous-agents:agents-setup securite memoire-projet`.
 
 ## Migrer un projet qui a déjà ses propres hooks
 
@@ -133,10 +136,10 @@ dans `.claude/settings.json` — se migre dans cet ordre :
    `require-review.sh`. Sinon deux files d'attente s'alimentent en parallèle et
    le tour se fait bloquer deux fois. Les hooks propres au projet (statusline,
    `git fetch` au démarrage, build) restent.
-4. **Supprimer la commande `/revue` du projet** si elle existe, pour éviter la
-   collision avec celle du plugin — sauf si elle contient des règles spécifiques
-   au projet, auquel cas garde la version projet et ignore celle du plugin.
-5. **Lancer `/amorcer-docs`** pour auditer les fichiers de documentation
+4. **Garder la commande `/revue` du projet** si elle existe : aucune collision à
+   craindre, les commandes du plugin sont préfixées (`/sous-agents:revue`). La
+   version projet, souvent plus spécifique, reste celle qu'on lance.
+5. **Lancer `/sous-agents:amorcer-docs`** pour auditer les fichiers de documentation
    existants : c'est le seul moyen de redresser un fichier écrit avant le plugin.
 
 Les noms d'agents anglophones courants (`project-memory`, `user-guide`,
@@ -157,8 +160,8 @@ hooks/
   post-tool-use.sh     file d'attente + rappel d'invocation
   require-review.sh    filet de sécurité en fin de tour
 commands/
-  agents-setup.md      /agents-setup
-  revue.md             /revue
+  agents-setup.md      /sous-agents:agents-setup
+  revue.md             /sous-agents:revue
 ```
 
 ### Pourquoi `templates/agents/` et non `agents/`

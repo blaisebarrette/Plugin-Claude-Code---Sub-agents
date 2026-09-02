@@ -28,7 +28,7 @@ d'initiative.
 
 Si un agent de documentation porte encore ses marqueurs
 `<!-- CONTEXTE-PROJET:DEBUT -->`, adapte d'abord son contexte au projet (comme le
-fait `/agents-setup`) : un agent qui ne connaît pas le projet amorcera mal son
+fait `/sous-agents:agents-setup`) : un agent qui ne connaît pas le projet amorcera mal son
 fichier.
 
 S'il n'y a aucun agent de documentation installé, dis-le et arrête-toi.

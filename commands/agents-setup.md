@@ -99,7 +99,7 @@ passe cette étape sans rien dire.
 Une ligne par agent : installé / conservé / adapté / retiré / ignoré (avec la
 raison). Signale explicitement les agents laissés en attente de contexte, et
 pourquoi.
-Termine en rappelant que la revue se lance avec `/revue`, et que le rappel
+Termine en rappelant que la revue se lance avec `/revue` ou `/sous-agents:revue`, et que le rappel
 automatique après modification de code est déjà actif.
 
 Si l'utilisateur ne veut aucun agent, crée le fichier vide

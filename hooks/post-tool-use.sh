@@ -54,7 +54,7 @@ emit_context PostToolUse <<EOF
 Sous-agents disponibles dans ce projet :
 $LISTE
 
-Avant de conclure ce tour, fais la passe de revue sur les fichiers modifies — soit en lancant \`/revue\`, soit en invoquant toi-meme les sous-agents concernes. Chaque sous-agent ignore la conversation : donne-lui un resume factuel des changements (fichiers touches, ce qui a ete ajoute/modifie/supprime, et pourquoi).
+Avant de conclure ce tour, fais la passe de revue sur les fichiers modifies — soit en lancant la commande de revue (\`/revue\` si le projet en a une, sinon \`/sous-agents:revue\`), soit en invoquant toi-meme les sous-agents concernes. Chaque sous-agent ignore la conversation : donne-lui un resume factuel des changements (fichiers touches, ce qui a ete ajoute/modifie/supprime, et pourquoi).
 
 Ordre impose quand plusieurs s'appliquent : \`error-handling\`, puis \`qualite-code\`, puis \`securite\` — l'un apres l'autre, jamais en parallele, car ils editent les memes fichiers ; \`securite\` passe en dernier pour auditer le code final. Ensuite seulement, \`memoire-projet\`, \`guide-utilisateur\` et \`reference-api\` peuvent tourner en parallele : ils ecrivent dans des fichiers distincts.
 

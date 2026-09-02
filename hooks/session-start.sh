@@ -60,7 +60,7 @@ Une fois la reponse obtenue :
 1. \`mkdir -p "$ROOT/.claude/agents"\` puis copie **uniquement** les agents choisis depuis \`$TPL/\` vers \`$ROOT/.claude/agents/\`.
 $ADAPTATION
 3. Ajoute la ligne \`.claude/.state/\` au \`.gitignore\` du projet si elle n'y est pas deja (ce dossier ne contient que de l'etat de session). Cree le fichier s'il n'existe pas ; si le projet n'est pas un depot git, passe cette etape.
-4. Si l'utilisateur n'en veut aucun : cree le fichier vide \`$STATE_DIR/agents-setup-skipped\` pour que la question ne revienne plus, et signale-lui qu'il peut lancer \`/agents-setup\` plus tard.
+4. Si l'utilisateur n'en veut aucun : cree le fichier vide \`$STATE_DIR/agents-setup-skipped\` pour que la question ne revienne plus, et signale-lui qu'il peut lancer \`/sous-agents:agents-setup\` plus tard.
 5. Dis en une ligne ce qui a ete installe, puis enchaine normalement sur la demande de l'utilisateur.
 
 Ne copie aucun agent que l'utilisateur n'a pas choisi, et ne modifie aucun fichier du plugin lui-meme.
@@ -87,7 +87,7 @@ Au debut de ta prochaine reponse, avant de traiter la demande de l'utilisateur :
 
 1. Dis-lui en une phrase que ces agents peuvent maintenant etre adaptes au projet, et demande-lui si tu le fais tout de suite.
 2. S'il accepte : pour chacun, remplace le bloc delimite par \`<!-- CONTEXTE-PROJET:DEBUT -->\` et \`<!-- CONTEXTE-PROJET:FIN -->\` par le contexte reel du projet, constate dans le depot (jamais suppose) — chaque agent precise dans son bloc ce dont il a besoin. Retire ensuite les deux marqueurs. Ne modifie rien d'autre dans ces fichiers.
-3. S'il refuse : cree le fichier vide \`$STATE_DIR/agents-context-skipped\` pour ne plus le relancer, et dis-lui que \`/agents-setup\` le fera quand il voudra.
+3. S'il refuse : cree le fichier vide \`$STATE_DIR/agents-context-skipped\` pour ne plus le relancer, et dis-lui que \`/sous-agents:agents-setup\` le fera quand il voudra.
 4. Enchaine ensuite normalement sur sa demande.
 EOF
   exit 0
@@ -113,10 +113,10 @@ cat <<EOF
 Etat des fichiers :
 $ETAT
 
-Au debut de ta prochaine reponse, avant de traiter la demande de l'utilisateur, propose la passe \`/amorcer-docs\` en une phrase, en disant qu'elle lit le depot entier — donc nettement plus couteuse qu'une mise a jour ordinaire — et qu'elle ne se fait qu'une fois.
+Au debut de ta prochaine reponse, avant de traiter la demande de l'utilisateur, propose la passe \`/sous-agents:amorcer-docs\` en une phrase, en disant qu'elle lit le depot entier — donc nettement plus couteuse qu'une mise a jour ordinaire — et qu'elle ne se fait qu'une fois.
 
-- S'il accepte : lance \`/amorcer-docs\`.
-- S'il prefere plus tard : cree le fichier vide \`$STATE_DIR/docs-amorcage-skipped\` pour ne plus le relancer, et dis-lui que \`/amorcer-docs\` reste disponible a tout moment.
+- S'il accepte : lance \`/sous-agents:amorcer-docs\`.
+- S'il prefere plus tard : cree le fichier vide \`$STATE_DIR/docs-amorcage-skipped\` pour ne plus le relancer, et dis-lui que \`/sous-agents:amorcer-docs\` reste disponible a tout moment.
 - Puis enchaine normalement sur sa demande.
 EOF
 exit 0
