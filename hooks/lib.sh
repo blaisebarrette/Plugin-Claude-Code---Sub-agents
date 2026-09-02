@@ -162,19 +162,36 @@ state_dir() {
   printf '%s' "$_s"
 }
 
+# _is_config <chemin> : 0 pour un fichier de configuration ou de donnees.
+# Defini hors de has_code a dessein : le /bin/sh de macOS (bash 3.2) echoue a
+# analyser un « case » place dans une substitution de commande $( ... ).
+_is_config() {
+  case "$1" in
+    *.json|*.yml|*.yaml|*.toml) return 0 ;;
+  esac
+  return 1
+}
+
 # has_code <racine> : 0 si le projet contient de quoi observer une pile technique.
-# Seuil a 3 fichiers de code hors dependances : un depot qui n'a qu'un README et
-# un fichier de config ne permet pas encore d'adapter un agent honnetement.
+#
+# Le critere est celui de is_reviewable, moins les fichiers de configuration et
+# de donnees (json, yaml, toml) : deux manifestes ne disent pas comment le projet
+# est ecrit. Seuil a deux fichiers — un projet d'un seul fichier squelette
+# n'apprend pas assez pour adapter un agent honnetement.
+#
+# Ne jamais restreindre ce compte a une liste d'extensions plus etroite que
+# is_reviewable : un jeu en HTML/CSS/JS est du code, et un seuil trop haut fait
+# echouer la proposition d'adaptation en silence — le defaut exact qui a fait
+# passer le plugin pour inerte lors du premier essai en conditions reelles.
 has_code() {
   _n="$(find "$1" \
     \( -name .git -o -name .claude -o -name node_modules -o -name vendor \
-       -o -name dist -o -name build -o -name target -o -name .venv -o -name venv \) -prune -o \
-    -type f \( -name '*.php' -o -name '*.ts' -o -name '*.tsx' -o -name '*.js' -o -name '*.jsx' \
-       -o -name '*.mjs' -o -name '*.vue' -o -name '*.svelte' -o -name '*.py' -o -name '*.rb' \
-       -o -name '*.go' -o -name '*.rs' -o -name '*.java' -o -name '*.kt' -o -name '*.swift' \
-       -o -name '*.cs' -o -name '*.c' -o -name '*.h' -o -name '*.cpp' -o -name '*.m' \) \
-    -print 2>/dev/null | head -n 3 | wc -l | tr -d ' ')"
-  [ "${_n:-0}" -ge 3 ]
+       -o -name dist -o -name build -o -name target -o -name .venv -o -name venv \
+       -o -name __pycache__ \) -prune -o -type f -print 2>/dev/null \
+    | while IFS= read -r _f; do
+        _is_config "$_f" || { is_reviewable "$_f" && printf 'x\n'; }
+      done | head -n 2 | wc -l | tr -d ' ')"
+  [ "${_n:-0}" -ge 2 ]
 }
 
 # agents_awaiting_context <racine> : noms des agents installes dont le bloc

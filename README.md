@@ -78,8 +78,9 @@ Un dépôt neuf n'offre rien à observer : dans ce cas les agents sont copiés *
 marqueurs. Ils fonctionnent quand même — le bloc leur dit alors de lire les
 fichiers concernés avant d'agir plutôt que de supposer des conventions.
 
-Dès que le projet contient du code (seuil : trois fichiers source hors
-dépendances), la session suivante propose de finaliser l'adaptation. Un refus
+Dès que le projet contient du code — deux fichiers passant le filtre de revue,
+fichiers de configuration exclus —, la session suivante propose de finaliser
+l'adaptation. Un refus
 crée `.claude/.state/agents-context-skipped` et la proposition ne revient plus ;
 `/sous-agents:agents-setup` reste disponible à tout moment.
 
@@ -257,6 +258,12 @@ et que le statut est `✔ enabled`.
 - **Un hook `PostToolUse` ne voit pas les écritures faites par `Bash`.** Tout
   filet de sécurité qui repose uniquement sur ce hook est aveugle en mode
   automatique.
+- **Le `/bin/sh` de macOS (bash 3.2) ne sait pas analyser un `case` placé dans
+  une substitution de commande `$( … )`.** Le symptôme est un « syntax error
+  near unexpected token » à l'exécution, alors que `sh -n` passe. Sortir le
+  `case` dans une fonction dédiée.
+- **Tester un hook en le sourçant dans bash ne prouve rien.** Il faut invoquer le
+  script tel que Claude Code l'invoque : `sh hooks/session-start.sh`.
 
 ## Adapter un agent après coup
 
