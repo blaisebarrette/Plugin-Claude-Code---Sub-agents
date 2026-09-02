@@ -440,12 +440,27 @@ changed_since() {
 # de plus de 30 minutes est considere comme abandonne (passe interrompue) et
 # efface : sans cette peremption, une revue avortee desarmerait le filet de
 # securite pour toujours.
+#
+# revue_en_cours() ne repond 0 que sur une preuve positive de fraicheur : c'est
+# elle qui desarme le filet de securite, son sens de defaillance doit donc etre
+# « pas de revue en cours ». Racine vide, find absent ou en echec, dossier
+# illisible, marqueur disparu entre le test et l'appel, find sans « -mmin »
+# (portage exotique) : la substitution rend une chaine vide, on lit « aucune
+# revue en cours » et le filet reste arme. L'ancienne forme « -mmin +30 »
+# faisait l'inverse — un find muet valait « marqueur frais », et un find casse
+# ou un dossier illisible desarmait le filet pour toute la duree du marqueur.
 revue_en_cours() {
-  _m="$(state_path "$1")/revue-en-cours"
+  _m="${1:-}"
+  [ -n "$_m" ] || return 1
+  _m="$(state_path "$_m")/revue-en-cours"
   [ -f "$_m" ] || return 1
-  if [ -n "$(find "$_m" -maxdepth 0 -mmin +30 2>/dev/null)" ]; then
-    rm -f "$_m" 2>/dev/null || true
-    return 1
-  fi
-  return 0
+  _frais="$(find "$_m" -maxdepth 0 -mmin -30 2>/dev/null)" || _frais=""
+  [ -n "$_frais" ] && return 0
+  # Marqueur perime, ou fraicheur non prouvee : on l'efface pour ne pas le
+  # relire a chaque tour (la purge de state_dir ne le vise pas). Un rm qui
+  # echoue ne change pas le verdict : la peremption se decide sur la date, pas
+  # sur la suppression, et un marqueur laisse par une passe interrompue ne
+  # desarme donc rien au-dela de 30 minutes.
+  rm -f "$_m" 2>/dev/null || true
+  return 1
 }
