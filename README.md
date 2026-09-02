@@ -264,6 +264,9 @@ et que le statut est `✔ enabled`.
   `case` dans une fonction dédiée.
 - **Tester un hook en le sourçant dans bash ne prouve rien.** Il faut invoquer le
   script tel que Claude Code l'invoque : `sh hooks/session-start.sh`.
+- **`AskUserQuestion` n'accepte que quatre options par question.** Une consigne
+  qui en demande une par agent est irréalisable dès le cinquième : la sélection
+  se répartit sur deux questions.
 
 ## Adapter un agent après coup
 

@@ -28,10 +28,13 @@ l'utilisateur.
 Si `$ARGUMENTS` est renseigné, c'est la sélection finale : les agents nommés
 doivent être présents, les autres retirés.
 
-Sinon, pose **une seule** question avec `AskUserQuestion` (`multiSelect: true`) :
-une option par modèle disponible, en reprenant sa description comme explication,
-et coche par défaut ce qui est déjà installé. Précise dans la question que les
-agents non retenus seront retirés du projet.
+Sinon, pose la question avec `AskUserQuestion` en `multiSelect: true`, en
+reprenant la description de chaque modèle comme explication de son option.
+
+**L'outil n'accepte que quatre options par question.** Avec six modèles, répartis
+la sélection sur deux questions — correcteurs de code, puis tenues de
+documentation. Précise dans chacune que les agents non retenus seront retirés du
+projet.
 
 **Garde-fou contre les doublons de rôle.** Un projet équipé avant le plugin a
 souvent déjà un agent qui couvre le rôle d'un modèle, sous un autre nom

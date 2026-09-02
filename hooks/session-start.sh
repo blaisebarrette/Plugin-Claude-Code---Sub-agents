@@ -52,7 +52,7 @@ if [ -z "$(project_agents "$ROOT")" ]; then
   cat <<EOF
 [plugin sous-agents] Ce projet n'a pas encore de sous-agents : \`$ROOT/.claude/agents/\` est absent ou vide.
 
-Au debut de ta prochaine reponse, avant de traiter la demande de l'utilisateur, pose-lui la question de la selection avec l'outil AskUserQuestion (une seule question, \`multiSelect: true\`, une option par agent ci-dessous, plus la possibilite de n'en prendre aucun) :
+Au debut de ta prochaine reponse, avant de traiter la demande de l'utilisateur, pose-lui la question de la selection avec l'outil AskUserQuestion, en \`multiSelect: true\`. **Cet outil n'accepte que quatre options par question** : repartis donc les agents ci-dessous sur deux questions — les correcteurs de code d'abord, les tenues de documentation ensuite — et dis dans chacune qu'il peut n'en prendre aucun. Reprends la description de chaque agent comme explication de son option.
 $CATALOGUE
 
 Une fois la reponse obtenue :
