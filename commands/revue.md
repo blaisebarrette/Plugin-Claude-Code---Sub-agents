@@ -19,6 +19,11 @@ Périmètre demandé par l'utilisateur (prioritaire s'il est renseigné) : $ARGU
 Fais tourner la passe de revue sur ce périmètre, avec **les sous-agents listés
 ci-dessus et eux seuls** — n'en invoque jamais un qui n'est pas installé.
 
+Les étapes ci-dessous nomment les agents tels que le plugin les livre. Un projet
+équipé avant le plugin peut les avoir sous d'autres noms (`code-quality`,
+`security`, `project-memory`, `user-guide`…) : raisonne alors par **rôle**, en te
+fiant à la description de chaque agent installé, et non au nom exact.
+
 Si la liste de fichiers détectée est vide et qu'aucun périmètre n'est fourni,
 détermine-le avec `git status --porcelain` et `git diff`. Si rien n'a changé non
 plus, dis-le et arrête-toi.

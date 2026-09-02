@@ -118,6 +118,31 @@ Le hook `Stop` sert de filet : si du code a été modifié sans revue, il bloque
 
 `/agents-setup` accepte des noms directement : `/agents-setup securite memoire-projet`.
 
+## Migrer un projet qui a déjà ses propres hooks
+
+Un projet équipé à la main avant le plugin — agents dans `.claude/agents/`, hooks
+dans `.claude/settings.json` — se migre dans cet ordre :
+
+1. **Installer le plugin d'abord.** Migrer avant, c'est retirer des hooks qui
+   fonctionnent pour n'en mettre aucun à la place.
+2. **Garder les agents du projet.** Ils sont déjà adaptés au code, souvent mieux
+   que les modèles génériques. Le hook `PostToolUse` lit le dossier à chaud : il
+   les listera tels quels, sans rien exiger sur leur nom.
+3. **Retirer du `.claude/settings.json` du projet les hooks que le plugin
+   remplace** — typiquement l'équivalent de `post-tool-use.sh` et de
+   `require-review.sh`. Sinon deux files d'attente s'alimentent en parallèle et
+   le tour se fait bloquer deux fois. Les hooks propres au projet (statusline,
+   `git fetch` au démarrage, build) restent.
+4. **Supprimer la commande `/revue` du projet** si elle existe, pour éviter la
+   collision avec celle du plugin — sauf si elle contient des règles spécifiques
+   au projet, auquel cas garde la version projet et ignore celle du plugin.
+5. **Lancer `/amorcer-docs`** pour auditer les fichiers de documentation
+   existants : c'est le seul moyen de redresser un fichier écrit avant le plugin.
+
+Les noms d'agents anglophones courants (`project-memory`, `user-guide`,
+`api-reference`) sont reconnus comme équivalents de leurs versions françaises :
+aucun renommage n'est nécessaire.
+
 ## Structure
 
 ```

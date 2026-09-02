@@ -6,7 +6,7 @@ argument-hint: "[agents à amorcer — sinon tous ceux qui sont installés]"
 
 ## Agents de documentation installés dans ce projet
 
-!`ls "$CLAUDE_PROJECT_DIR/.claude/agents" 2>/dev/null | sed 's/\.md$//' | grep -E '^(memoire-projet|guide-utilisateur|reference-api)$' || echo "(aucun)"`
+!`ls "$CLAUDE_PROJECT_DIR/.claude/agents" 2>/dev/null | sed 's/\.md$//' | grep -E '^(memoire-projet|project-memory|guide-utilisateur|user-guide|reference-api|api-reference)$' || echo "(aucun)"`
 
 ## État des fichiers de documentation
 

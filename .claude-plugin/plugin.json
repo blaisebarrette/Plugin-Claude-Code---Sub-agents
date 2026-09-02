@@ -6,6 +6,15 @@
   "author": {
     "name": "Blaise Barrette"
   },
-  "keywords": ["sous-agents", "revue de code", "securite", "documentation", "hooks"],
+  "homepage": "https://github.com/blaisebarrette/Plugin-Claude-Code---Sub-agents",
+  "repository": "https://github.com/blaisebarrette/Plugin-Claude-Code---Sub-agents",
+  "license": "MIT",
+  "keywords": [
+    "sous-agents",
+    "revue de code",
+    "securite",
+    "documentation",
+    "hooks"
+  ],
   "hooks": "./hooks/hooks.json"
 }

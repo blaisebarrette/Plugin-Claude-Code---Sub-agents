@@ -193,14 +193,28 @@ agents_awaiting_context() {
 #
 # La correspondance agent -> fichier est volontairement explicite ici : c'est le
 # seul endroit a changer si un modele d'agent adopte un autre nom de fichier.
+# Chaque fichier accepte plusieurs noms d'agent, separes par « | » : un projet
+# equipe avant le plugin nomme souvent ces agents en anglais, et renommer ses
+# agents rodes juste pour satisfaire le plugin serait le mauvais sens.
 doc_status() {
   _root="$1"
-  for _pair in "memoire-projet PROJECT_MEMORY.md" \
-               "guide-utilisateur USER_GUIDE.md" \
-               "reference-api API_REFERENCE.md"; do
-    _agent="${_pair%% *}"
+  for _pair in "memoire-projet|project-memory PROJECT_MEMORY.md" \
+               "guide-utilisateur|user-guide USER_GUIDE.md" \
+               "reference-api|api-reference API_REFERENCE.md"; do
+    _noms="${_pair%% *}"
     _file="${_pair##* }"
-    [ -f "$_root/.claude/agents/$_agent.md" ] || continue
+    _agent=""
+    _reste="$_noms"
+    while [ -n "$_reste" ]; do
+      _n="${_reste%%|*}"
+      if [ -f "$_root/.claude/agents/$_n.md" ]; then
+        _agent="$_n"
+        break
+      fi
+      [ "$_reste" = "$_n" ] && break
+      _reste="${_reste#*|}"
+    done
+    [ -n "$_agent" ] || continue
     if [ -f "$_root/$_file" ]; then
       printf '%s %s present\n' "$_agent" "$_file"
     else
