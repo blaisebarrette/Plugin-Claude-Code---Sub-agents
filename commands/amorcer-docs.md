@@ -6,11 +6,11 @@ argument-hint: "[agents à amorcer — sinon tous ceux qui sont installés]"
 
 ## Agents de documentation installés dans ce projet
 
-!`ls "$CLAUDE_PROJECT_DIR/.claude/agents" 2>/dev/null | sed 's/\.md$//' | grep -E '^(memoire-projet|project-memory|guide-utilisateur|user-guide|reference-api|api-reference)$' || echo "(aucun)"`
+!`sh -c 'd="${CLAUDE_PROJECT_DIR:-$PWD}"; ls "$d/.claude/agents" 2>/dev/null | sed "s/\.md$//" | grep -E "^(memoire-projet|project-memory|guide-utilisateur|user-guide|reference-api|api-reference)$" || echo "(aucun)"'`
 
 ## État des fichiers de documentation
 
-!`cd "$CLAUDE_PROJECT_DIR" && for f in PROJECT_MEMORY.md USER_GUIDE.md API_REFERENCE.md; do if [ -f "$f" ]; then printf '%s — présent (%s lignes)\n' "$f" "$(wc -l < "$f" | tr -d ' ')"; else printf '%s — absent\n' "$f"; fi; done`
+!`sh -c 'cd "${CLAUDE_PROJECT_DIR:-$PWD}" || exit 0; for f in PROJECT_MEMORY.md USER_GUIDE.md API_REFERENCE.md; do if [ -f "$f" ]; then printf "%s — présent (%s lignes)\n" "$f" "$(wc -l < "$f" | tr -d " ")"; else printf "%s — absent\n" "$f"; fi; done'`
 
 Agents demandés par l'utilisateur (prioritaire si renseigné) : $ARGUMENTS
 
@@ -32,6 +32,15 @@ fait `/sous-agents:agents-setup`) : un agent qui ne connaît pas le projet amorc
 fichier.
 
 S'il n'y a aucun agent de documentation installé, dis-le et arrête-toi.
+
+### 1 bis. Signaler que la passe commence
+
+```bash
+sh -c 'd="${CLAUDE_PROJECT_DIR:-$PWD}/.claude/.state"; mkdir -p "$d" && touch "$d/revue-en-cours"'
+```
+
+Les agents vont écrire dans les fichiers de documentation ; ce marqueur empêche
+leurs écritures de déclencher une demande de revue. Retire-le à l'étape 4.
 
 ### 2. Préparer le terrain
 
@@ -66,7 +75,7 @@ vaut mieux qu'un fichier complet et approximatif.
 Une fois les agents terminés :
 
 ```bash
-mkdir -p "$CLAUDE_PROJECT_DIR/.claude/.state" && date > "$CLAUDE_PROJECT_DIR/.claude/.state/docs-amorcage"
+sh -c 'd="${CLAUDE_PROJECT_DIR:-$PWD}/.claude/.state"; mkdir -p "$d" && date > "$d/docs-amorcage" && rm -f "$d/revue-en-cours"'
 ```
 
 Ce marqueur empêche le hook de session de reproposer l'amorçage. Ne le crée

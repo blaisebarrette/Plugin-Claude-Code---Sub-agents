@@ -15,14 +15,18 @@
 set -u
 
 DIR="$( CDPATH= cd -- "$(dirname -- "$0")" 2>/dev/null && pwd )" || exit 0
+# « . » est un utilitaire special : si la bibliotheque manque, ni « 2>/dev/null »
+# ni « || exit 0 » n'ont d'effet et dash termine le hook en code 2 — soit, ici, un
+# blocage. La lisibilite se verifie donc avant de sourcer.
+[ -n "${DIR:-}" ] && [ -r "$DIR/lib.sh" ] || exit 0
 # shellcheck source=lib.sh
-. "$DIR/lib.sh" 2>/dev/null || exit 0
+. "$DIR/lib.sh"
 
 read_payload
 ROOT="$(project_root)"
 PLUGIN="$(plugin_root)"
 TPL="$PLUGIN/templates/agents"
-STATE_DIR="$ROOT/.claude/.state"
+STATE_DIR="$(state_path "$ROOT")"
 
 [ -d "$TPL" ] || exit 0
 
@@ -71,10 +75,9 @@ fi
 # Le projet est equipe : on pose le repere de detection des modifications, pour
 # que le hook Stop rattrape aussi les editions faites autrement que par
 # Edit/Write (mode automatique : ecriture par Bash).
-SID="$(json_str session_id)"
-[ -n "$SID" ] || SID="inconnue"
+SID="$(session_key)"
 _st="$(state_dir "$ROOT")"
-[ -n "$_st" ] && : > "$_st/$SID.epoch" 2>/dev/null
+[ -n "$_st" ] && touch_marker "$_st/$SID.epoch"
 
 # ---------------------------------------------------------------------------
 # Cas 2 : des agents installes attendent encore leur contexte.

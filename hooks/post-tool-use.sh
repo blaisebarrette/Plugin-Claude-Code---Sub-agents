@@ -12,8 +12,12 @@
 set -u
 
 DIR="$( CDPATH= cd -- "$(dirname -- "$0")" 2>/dev/null && pwd )" || exit 0
+# « . » est un utilitaire special : si la bibliotheque manque, ni « 2>/dev/null »
+# ni « || exit 0 » n'ont d'effet et dash termine le hook en code 2, soit une erreur
+# affichee apres chaque edition. La lisibilite se verifie donc avant de sourcer.
+[ -n "${DIR:-}" ] && [ -r "$DIR/lib.sh" ] || exit 0
 # shellcheck source=lib.sh
-. "$DIR/lib.sh" 2>/dev/null || exit 0
+. "$DIR/lib.sh"
 
 read_payload
 ROOT="$(project_root)"
@@ -22,8 +26,19 @@ FILE="$(json_str file_path)"
 [ -n "$FILE" ] || FILE="$(json_str filePath)"
 [ -n "$FILE" ] || FILE="$(json_str notebook_path)"
 [ -n "$FILE" ] || exit 0
+# Ce chemin vient du payload et part a deux endroits ou une ligne compte : la file
+# d'attente et le message injecte dans le contexte de Claude. Assaini avant les
+# deux, et avant is_reviewable — voir safe_path dans lib.sh.
+FILE="$(safe_path "$FILE")"
+[ -n "$FILE" ] || exit 0
 
 is_reviewable "$FILE" || exit 0
+
+# Pendant une passe de revue, les editions viennent des sous-agents : leur
+# rappeler d'invoquer des sous-agents n'a aucun sens.
+if revue_en_cours "$ROOT"; then
+  exit 0
+fi
 
 AGENTS="$(project_agents "$ROOT")"
 [ -n "$AGENTS" ] || exit 0
@@ -31,22 +46,29 @@ AGENTS="$(project_agents "$ROOT")"
 STATE="$(state_dir "$ROOT")"
 [ -n "$STATE" ] || exit 0
 
-SID="$(json_str session_id)"
-[ -n "$SID" ] || SID="inconnue"
-PID="$(json_str prompt_id)"
-[ -n "$PID" ] || PID="$SID"
+SID="$(session_key)"
+# prompt_id absent : le verrou retombe sur la session. Assaini comme le session_id,
+# puisqu'il nomme lui aussi un fichier d'etat.
+PID="$(safe_key "$(json_str prompt_id)")"
+[ "$PID" != "inconnue" ] || PID="$SID"
 
 # File d'attente : sert au hook Stop et a la commande /revue.
-printf '%s\n' "$FILE" >> "$STATE/$SID.pending" 2>/dev/null || exit 0
+# Groupe redirige : un .claude/.state non inscriptible fait echouer la redirection,
+# et le message du shell ne doit pas remonter au journal du hook.
+{ printf '%s\n' "$FILE" >> "$STATE/$SID.pending"; } 2>/dev/null || exit 0
 
 # Un seul rappel par tour utilisateur : sans ce verrou, une serie de dix editions
 # injecte dix fois le meme paragraphe.
 MARK="$STATE/$SID.$PID.rappel"
 [ -f "$MARK" ] && exit 0
-: > "$MARK" 2>/dev/null || exit 0
+touch_marker "$MARK"
+# Verrou impossible a poser : on se tait plutot que de risquer un rappel a chaque
+# edition. (« : > fichier » est proscrit ici : voir touch_marker dans lib.sh.)
+[ -f "$MARK" ] || exit 0
 
 LISTE="$(printf '%s' "$AGENTS" | sed 's/^/  - /')"
-NB="$(sort -u "$STATE/$SID.pending" 2>/dev/null | wc -l | tr -d ' ')"
+# La ligne qui vient d'etre ajoutee fait foi : un compte illisible vaut 1 (safe_count).
+NB="$(safe_count "$(sort -u "$STATE/$SID.pending" 2>/dev/null | wc -l | tr -d ' ')")"
 
 emit_context PostToolUse <<EOF
 [plugin sous-agents] Du code vient d'etre modifie ($NB fichier(s) ce tour-ci, dont \`$FILE\`).

@@ -116,6 +116,12 @@ d'éditions.
 Le hook `Stop` sert de filet : si du code a été modifié sans revue, il bloque
 **une seule fois** la fin du tour et demande la passe de revue.
 
+Pendant une passe de revue, les deux hooks se taisent : la commande pose
+`.claude/.state/revue-en-cours` et le retire à la fin. Sans ce marqueur, les
+éditions faites **par** les sous-agents comptent comme du code non révisé et la
+revue se redemande elle-même à chaque tour. Le marqueur périme au bout de 30
+minutes, pour qu'une passe interrompue ne désarme pas le filet indéfiniment.
+
 **Deux voies de détection, parce qu'une seule ne suffit pas.** `PostToolUse` ne
 voit passer que `Edit`, `Write` et `MultiEdit` ; en mode automatique, Claude
 écrit les fichiers par `Bash` (heredoc, `sed`, script) et le hook ne voit rien.
@@ -264,6 +270,11 @@ et que le statut est `✔ enabled`.
   `case` dans une fonction dédiée.
 - **Tester un hook en le sourçant dans bash ne prouve rien.** Il faut invoquer le
   script tel que Claude Code l'invoque : `sh hooks/session-start.sh`.
+- **Une session ouvrant plusieurs dossiers de travail confond les agents de
+  même nom.** Les projets équipés par ce plugin ont tous un
+  `.claude/agents/qualite-code.md` : c'est la définition d'un autre projet qui
+  peut être servie, avec son contexte étranger. Un agent bien écrit s'en aperçoit
+  et va lire le bon fichier ; ne comptez pas dessus.
 - **`AskUserQuestion` n'accepte que quatre options par question.** Une consigne
   qui en demande une par agent est irréalisable dès le cinquième : la sélection
   se répartit sur deux questions.

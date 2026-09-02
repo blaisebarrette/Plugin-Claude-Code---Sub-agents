@@ -6,15 +6,15 @@ argument-hint: "[noms des agents voulus, séparés par des espaces — sinon la 
 
 ## Modèles fournis par le plugin
 
-!`ls "${CLAUDE_PLUGIN_ROOT}/templates/agents" 2>/dev/null | sed 's/\.md$//' || echo "(dossier de modèles introuvable)"`
+!`sh -c 'ls "${CLAUDE_PLUGIN_ROOT}/templates/agents" 2>/dev/null | sed "s/\.md$//" | grep . || echo "(dossier de modèles introuvable)"'`
 
 ## Sous-agents actuellement installés dans ce projet
 
-!`ls "$CLAUDE_PROJECT_DIR/.claude/agents" 2>/dev/null | sed 's/\.md$//' || echo "(aucun)"`
+!`sh -c 'd="${CLAUDE_PROJECT_DIR:-$PWD}"; ls "$d/.claude/agents" 2>/dev/null | sed "s/\.md$//" | grep . || echo "(aucun)"'`
 
 ## Agents installés dont le contexte n'a jamais été rempli
 
-!`grep -l 'CONTEXTE-PROJET' "$CLAUDE_PROJECT_DIR/.claude/agents"/*.md 2>/dev/null | sed 's|.*/||; s|\.md$||' || echo "(aucun)"`
+!`sh -c 'd="${CLAUDE_PROJECT_DIR:-$PWD}"; grep -l "CONTEXTE-PROJET" "$d/.claude/agents"/*.md 2>/dev/null | sed "s|.*/||; s|\.md\$||" | grep . || echo "(aucun)"'`
 
 Sélection demandée par l'utilisateur (prioritaire si renseignée) : $ARGUMENTS
 

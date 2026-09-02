@@ -6,11 +6,11 @@ argument-hint: "[fichiers à réviser à la place de la liste détectée]"
 
 ## Fichiers de code modifiés détectés
 
-!`find "$CLAUDE_PROJECT_DIR/.claude/.state" -maxdepth 1 \( -name "*.review" -o -name "*.pending" \) -exec cat {} + 2>/dev/null | sort -u`
+!`sh -c 'd="${CLAUDE_PROJECT_DIR:-$PWD}"; find "$d/.claude/.state" -maxdepth 1 \( -name "*.review" -o -name "*.pending" \) -exec cat {} + 2>/dev/null | sort -u | grep . || echo "(liste vide — déterminer le périmètre avec git)"'`
 
 ## Sous-agents installés dans ce projet
 
-!`ls "$CLAUDE_PROJECT_DIR/.claude/agents" 2>/dev/null | sed 's/\.md$//' || echo "(aucun)"`
+!`sh -c 'd="${CLAUDE_PROJECT_DIR:-$PWD}"; ls "$d/.claude/agents" 2>/dev/null | sed "s/\.md$//" | grep . || echo "(aucun)"'`
 
 Périmètre demandé par l'utilisateur (prioritaire s'il est renseigné) : $ARGUMENTS
 
@@ -38,6 +38,18 @@ plus, dis-le et arrête-toi.
 Avant de déléguer, prépare **un résumé factuel des changements** : fichiers
 touchés, ce qui a été ajouté / modifié / supprimé, et pourquoi. Chaque sous-agent
 reçoit ce résumé — il ne connaît pas la conversation.
+
+### Étape 0 — signaler que la passe commence
+
+```bash
+sh -c 'd="${CLAUDE_PROJECT_DIR:-$PWD}/.claude/.state"; mkdir -p "$d" && touch "$d/revue-en-cours"'
+```
+
+Tant que ce marqueur existe, les hooks `Stop` et `PostToolUse` se taisent : sans
+lui, les éditions faites **par** les sous-agents comptent comme du code non
+révisé, et la revue se redemande elle-même à chaque tour. Il périme seul au bout
+de 30 minutes, pour qu'une passe interrompue ne désarme pas le filet
+indéfiniment.
 
 ### Étape 1 — correction du code (séquentiel)
 
@@ -80,8 +92,11 @@ Une fois tous les sous-agents terminés, vide la file d'attente pour que les
 éditions faites *par* les sous-agents ne déclenchent pas une seconde revue :
 
 ```bash
-find "$CLAUDE_PROJECT_DIR/.claude/.state" -maxdepth 1 \( -name "*.review" -o -name "*.pending" \) -delete
+sh -c 'd="${CLAUDE_PROJECT_DIR:-$PWD}/.claude/.state"; rm -f "$d/revue-en-cours"; find "$d" -maxdepth 1 \( -name "*.review" -o -name "*.pending" \) -delete'
 ```
+
+Le retrait du marqueur fait partie de la purge : ne l'oublie pas, les hooks
+resteraient muets jusqu'à sa péremption.
 
 ## Rapport final
 

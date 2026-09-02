@@ -7,24 +7,33 @@
 set -u
 
 DIR="$( CDPATH= cd -- "$(dirname -- "$0")" 2>/dev/null && pwd )" || exit 0
+# « . » est un utilitaire special : si la bibliotheque manque, ni « 2>/dev/null »
+# ni « || exit 0 » n'ont d'effet et dash termine le hook en code 2 — soit, ici, un
+# blocage. La lisibilite se verifie donc avant de sourcer.
+[ -n "${DIR:-}" ] && [ -r "$DIR/lib.sh" ] || exit 0
 # shellcheck source=lib.sh
-. "$DIR/lib.sh" 2>/dev/null || exit 0
+. "$DIR/lib.sh"
 
 read_payload
 ROOT="$(project_root)"
 
-SID="$(json_str session_id)"
-[ -n "$SID" ] || SID="inconnue"
+SID="$(session_key)"
 
-STATE="$ROOT/.claude/.state"
+STATE="$(state_path "$ROOT")"
 PENDING="$STATE/$SID.pending"
 REVIEW="$STATE/$SID.review"
 EPOCH="$STATE/$SID.epoch"
 
+# Passe de revue en cours : les editions du tour sont celles des sous-agents.
+# Exiger une revue de la revue est la boucle que ce marqueur existe pour couper.
+if revue_en_cours "$ROOT"; then
+  exit 0
+fi
+
 # Deuxieme passage : la revue a eu lieu ou a ete refusee. On purge et on sort.
 if json_true stop_hook_active; then
   rm -f "$PENDING" "$REVIEW" 2>/dev/null || true
-  : > "$EPOCH" 2>/dev/null || true
+  touch_marker "$EPOCH"
   exit 0
 fi
 
@@ -33,10 +42,12 @@ fi
 # compare alors les dates de modification au repere pose au tour precedent.
 if [ ! -s "$PENDING" ]; then
   if [ -f "$EPOCH" ]; then
-    changed_since "$ROOT" "$EPOCH" >> "$PENDING" 2>/dev/null || true
+    # Groupe redirige : un .claude/.state devenu non inscriptible fait echouer la
+    # redirection, et le message du shell ne doit pas remonter au journal du hook.
+    { changed_since "$ROOT" "$EPOCH" >> "$PENDING"; } 2>/dev/null || true
   else
     # Premier tour : on pose le repere, rien a exiger encore.
-    mkdir -p "$STATE" 2>/dev/null && : > "$EPOCH" 2>/dev/null
+    mkdir -p "$STATE" 2>/dev/null && touch_marker "$EPOCH"
     exit 0
   fi
 fi
@@ -51,12 +62,17 @@ if [ -z "$AGENTS" ]; then
 fi
 
 # La file passe en .review : /revue sait alors quoi relire, meme apres purge.
-sort -u "$PENDING" > "$REVIEW" 2>/dev/null || exit 0
+{ sort -u "$PENDING" > "$REVIEW"; } 2>/dev/null || exit 0
+[ -s "$REVIEW" ] || exit 0
 rm -f "$PENDING" 2>/dev/null || true
-: > "$EPOCH" 2>/dev/null || true
+touch_marker "$EPOCH"
 
-FICHIERS="$(sed 's|^|  - |' "$REVIEW")"
-NB="$(wc -l < "$REVIEW" | tr -d ' ')"
+FICHIERS="$(sed 's|^|  - |' "$REVIEW" 2>/dev/null)"
+# Bloquer le tour sans pouvoir nommer un seul fichier ne dirait rien d'utile a
+# Claude : dans ce cas on laisse simplement le tour se terminer.
+[ -n "$FICHIERS" ] || exit 0
+# .review contient au moins une ligne : un compte illisible vaut 1 (safe_count).
+NB="$(safe_count "$(wc -l < "$REVIEW" 2>/dev/null | tr -d ' ')")"
 LISTE="$(printf '%s' "$AGENTS" | sed 's/^/  - /')"
 
 RAISON="$(cat <<EOF | json_escape
