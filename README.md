@@ -64,6 +64,13 @@ agent, le hook ne fait plus rien. Si vous n'en voulez aucun, le fichier
 
 La ligne `.claude/.state/` est ajoutée au `.gitignore` du projet au passage.
 
+> **Redémarrage requis.** La liste des sous-agents est lue au démarrage de la
+> session : ceux qui viennent d'être copiés ne sont **pas invocables avant un
+> redémarrage**. Le plugin le signale — mais si une passe de revue est tentée
+> dans cette première session, elle se fera répondre « Agent type not found ».
+> Le repli sur un agent générique est interdit : le prompt système de l'agent,
+> qui fait toute sa valeur, serait perdu sans que rien ne le signale.
+
 ### Projet encore vide à l'installation
 
 Un dépôt neuf n'offre rien à observer : dans ce cas les agents sont copiés **sans
@@ -107,6 +114,14 @@ d'éditions.
 
 Le hook `Stop` sert de filet : si du code a été modifié sans revue, il bloque
 **une seule fois** la fin du tour et demande la passe de revue.
+
+**Deux voies de détection, parce qu'une seule ne suffit pas.** `PostToolUse` ne
+voit passer que `Edit`, `Write` et `MultiEdit` ; en mode automatique, Claude
+écrit les fichiers par `Bash` (heredoc, `sed`, script) et le hook ne voit rien.
+Le hook `Stop` compare donc aussi les dates de modification à un repère posé en
+début de session, ce qui rattrape toutes les voies d'écriture quel que soit
+l'outil employé. Dépendances, artefacts générés et fichiers de documentation
+produits par les agents sont exclus des deux côtés.
 
 ### Commandes
 
@@ -233,6 +248,15 @@ et que le statut est `✔ enabled`.
   fichiers *supplémentaires*.
 - **Les commandes d'un plugin sont préfixées** (`/sous-agents:revue`) : pas de
   collision possible avec une commande du projet portant le même nom.
+- **Un agent copié en cours de session n'existe pas pour cette session.** La
+  liste est lue au démarrage. Le symptôme est explicite (« Agent type not
+  found ») ; le danger est le repli silencieux sur `general-purpose`, qui a
+  l'apparence d'une revue sans en être une.
+- **`suppressOutput: true` rend l'injection d'un hook invérifiable** dans la
+  transcription — donc indébogable. À éviter tant que le hook n'est pas prouvé.
+- **Un hook `PostToolUse` ne voit pas les écritures faites par `Bash`.** Tout
+  filet de sécurité qui repose uniquement sur ce hook est aveugle en mode
+  automatique.
 
 ## Adapter un agent après coup
 
